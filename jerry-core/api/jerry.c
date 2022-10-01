@@ -4557,6 +4557,96 @@ jerry_get_container_type (const jerry_value_t value) /**< the container object *
   return JERRY_CONTAINER_TYPE_INVALID;
 } /* jerry_get_container_type */
 
+
+bool
+jerry_enable_cpu_profiling (void)
+{
+  jerry_assert_api_available ();
+
+#if !ENABLED (JERRY_CPU_PROFILER)
+  return false;
+#else
+  return true;
+#endif
+}
+
+/**
+ * start CPU profiling
+ * return false if profiler feature disabled or profiler already started.
+ */
+bool
+jerry_start_cpu_profiling (const char *path,
+                          double duration) /**< millisecond duration, no limit if <= 0 */
+{
+  jerry_assert_api_available ();
+
+#if !ENABLED (JERRY_CPU_PROFILER)
+  JERRY_UNUSED (path);
+  JERRY_UNUSED (duration);
+  return false;
+#else
+
+  if (JERRY_CONTEXT (cpu_profiling_fp))
+  {
+    return false;
+  }
+
+  FILE *fp = fopen (path, "w");
+  if (fp == NULL)
+  {
+    return false;
+  }
+
+  JERRY_CONTEXT (cpu_profiling_fp) = fp;
+
+  JERRY_CONTEXT (cpu_profiling_start_time) = jerry_port_get_current_time ();
+  JERRY_CONTEXT (cpu_profiling_duration) = duration;
+  return true;
+#endif
+}
+
+bool
+jerry_stop_cpu_profiling (void)
+{
+  jerry_assert_api_available ();
+
+#if !ENABLED (JERRY_CPU_PROFILER)
+  return false;
+#else
+
+  FILE *fp = JERRY_CONTEXT (cpu_profiling_fp);
+  if (!fp)
+  {
+    return false;
+  }
+
+  fflush (fp);
+  fclose (fp);
+  JERRY_CONTEXT (cpu_profiling_fp) = NULL;
+
+  return true;
+#endif
+}
+
+void
+jerry_take_heap_snapshot (const char *path)
+{
+  jerry_assert_api_available ();
+
+#ifndef JERRY_HEAP_PROFILER
+  JERRY_UNUSED (path);
+#else /* !JERRY_HEAP_PROFILER */
+  FILE *fp = fopen (path, "w");
+  if (fp == NULL)
+  {
+    return;
+  }
+
+  heap_profiler_take_snapshot (fp);
+
+  fclose (fp);
+#endif /* JERRY_HEAP_PROFILER */
+}
 /**
  * @}
  */

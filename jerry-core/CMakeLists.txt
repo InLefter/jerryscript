@@ -42,6 +42,8 @@ set(JERRY_GLOBAL_HEAP_SIZE          "(512)" CACHE STRING "Size of memory heap, i
 set(JERRY_GC_LIMIT                  "(0)"   CACHE STRING "Heap usage limit to trigger garbage collection")
 set(JERRY_STACK_LIMIT               "(0)"   CACHE STRING "Maximum stack usage size, in kilobytes")
 set(JERRY_GC_MARK_LIMIT             "(8)"   CACHE STRING "Maximum depth of recursion during GC mark phase")
+set(JERRY_CPU_PROFILER              ON      CACHE BOOL   "Enable cpu profiler?")
+set(JERRY_SOURCE_INFO               ON      CACHE BOOL   "Enable source info?")
 
 # Option overrides
 if(USING_MSVC)
@@ -90,6 +92,8 @@ message(STATUS "JERRY_ERROR_MESSAGES           " ${JERRY_ERROR_MESSAGES})
 message(STATUS "JERRY_EXTERNAL_CONTEXT         " ${JERRY_EXTERNAL_CONTEXT})
 message(STATUS "JERRY_PARSER                   " ${JERRY_PARSER})
 message(STATUS "JERRY_LINE_INFO                " ${JERRY_LINE_INFO})
+message(STATUS "JERRY_CPU_PROFILER             " ${JERRY_CPU_PROFILER})
+message(STATUS "JERRY_SOURCE_INFO              " ${JERRY_SOURCE_INFO})
 message(STATUS "JERRY_LOGGING                  " ${JERRY_LOGGING} ${JERRY_LOGGING_MESSAGE})
 message(STATUS "JERRY_MEM_STATS                " ${JERRY_MEM_STATS})
 message(STATUS "JERRY_MEM_GC_BEFORE_EACH_ALLOC " ${JERRY_MEM_GC_BEFORE_EACH_ALLOC})
@@ -237,6 +241,10 @@ jerry_add_define01(JERRY_PARSER)
 
 # JS line info
 jerry_add_define01(JERRY_LINE_INFO)
+
+jerry_add_define01(JERRY_CPU_PROFILER)
+
+jerry_add_define01(JERRY_SOURCE_INFO)
 
 # Logging
 jerry_add_define01(JERRY_LOGGING)

@@ -4208,6 +4208,49 @@ error:
 #undef READ_LITERAL
 #undef READ_LITERAL_INDEX
 
+
+#if ENABLED (JERRY_CPU_PROFILER)
+static
+    void print_string (FILE *fp, ecma_value_t string)
+{
+  JERRY_ASSERT (ecma_is_value_string (string));
+
+  ecma_string_t *string_p = ecma_get_string_from_value (string);
+  lit_utf8_size_t sz = ecma_string_get_utf8_size (string_p);
+  lit_utf8_byte_t buffer_p[sz+1];
+  buffer_p[sz] = '\0';
+  ecma_string_to_utf8_bytes (string_p, buffer_p, sz);
+  fprintf (fp, "%s", buffer_p);
+}
+
+static
+    void print_frame (FILE *fp, const ecma_compiled_code_t *bytecode_p)
+{
+  fprintf (fp, ",");
+  if (bytecode_p->name != ECMA_VALUE_EMPTY)
+  {
+    print_string (fp, bytecode_p->name);
+  }
+  fprintf (fp, "(");
+  if (bytecode_p->source != ECMA_VALUE_EMPTY)
+  {
+    print_string (fp, bytecode_p->source);
+  }
+  fprintf (fp, ":%u:%u)", bytecode_p->line, bytecode_p->column);
+}
+
+static void
+print_prof_stack (FILE *fp)
+{
+  for (vm_frame_ctx_t *ctx_p = JERRY_CONTEXT (vm_top_context_p);
+       ctx_p != NULL; ctx_p = ctx_p->prev_context_p)
+  {
+    print_frame (JERRY_CONTEXT (cpu_profiling_fp), ctx_p->bytecode_header_p);
+  }
+  fprintf (fp, "\n");
+}
+#endif /* ENABLED (JERRY_CPU_PROFILER) */
+
 /**
  * Initialize code block execution
  *
@@ -4313,6 +4356,10 @@ vm_init_exec (vm_frame_ctx_t *frame_ctx_p, /**< frame context */
 ecma_value_t JERRY_ATTR_NOINLINE
 vm_execute (vm_frame_ctx_t *frame_ctx_p) /**< frame context */
 {
+#if ENABLED (JERRY_CPU_PROFILER)
+  double begin_time = jerry_port_get_current_time();
+#endif /* ENABLED (JERRY_CPU_PROFILER) */
+
   while (true)
   {
     ecma_value_t completion_value = vm_loop (frame_ctx_p);
@@ -4376,6 +4423,21 @@ vm_execute (vm_frame_ctx_t *frame_ctx_p) /**< frame context */
           JERRY_CONTEXT (debugger_stop_context) = NULL;
         }
 #endif /* ENABLED (JERRY_DEBUGGER) */
+
+#if ENABLED (JERRY_CPU_PROFILER)
+        double end_time = jerry_port_get_current_time ();
+        FILE *fp = JERRY_CONTEXT (cpu_profiling_fp);
+        if (fp)
+        {
+          fprintf (fp, "%g", end_time - begin_time);
+          print_prof_stack (fp);
+          if (JERRY_CONTEXT (cpu_profiling_duration) > 0 &&
+              end_time > JERRY_CONTEXT (cpu_profiling_start_time) + JERRY_CONTEXT (cpu_profiling_duration))
+          {
+            jerry_stop_cpu_profiling ();
+          }
+        }
+#endif /* ENABLED (JERRY_CPU_PROFILER) */
 
         JERRY_CONTEXT (vm_top_context_p) = frame_ctx_p->prev_context_p;
         return completion_value;

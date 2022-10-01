@@ -234,6 +234,12 @@ struct jerry_context_t
   ecma_object_t *current_function_obj_p; /** currently invoked function object
                                              (Note: currently used only in generator functions) */
 #endif /* ENABLED (JERRY_ES2015) */
+
+#if ENABLED (JERRY_CPU_PROFILER)
+  FILE *cpu_profiling_fp;
+  double cpu_profiling_duration;
+  double cpu_profiling_start_time;
+#endif /* ENABLED (JERRY_CPU_PROFILER) */
 };
 
 #if ENABLED (JERRY_EXTERNAL_CONTEXT)
